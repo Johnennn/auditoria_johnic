@@ -1,122 +1,57 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import Resumen from "./components/Resumen";
+import SQLi from "./components/SQLi";
+import XSS from "./components/XSS";
+import Comandos from "./components/Comandos";
+import Activos from "./components/Activos";
+import Matriz from "./components/Matriz";
+import Controles from "./components/Controles";
+import Recuperacion from "./components/Recuperacion";
+import Prompts from "./components/Prompts";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+const NAV_ITEMS = [
+  { id: "resumen",     label: "01 Resumen",        component: <Resumen /> },
+  { id: "sqli",        label: "02 SQL Injection",   component: <SQLi /> },
+  { id: "xss",         label: "03 XSS Reflected",   component: <XSS /> },
+  { id: "comandos",    label: "04 Cmd Injection",   component: <Comandos /> },
+  { id: "activos",     label: "05 Activos",         component: <Activos /> },
+  { id: "matriz",      label: "06 Matriz de Riesgo",component: <Matriz /> },
+  { id: "controles",   label: "07 Controles",       component: <Controles /> },
+  { id: "recuperacion",label: "08 Recuperación",    component: <Recuperacion /> },
+  { id: "prompts",     label: "09 Prompts IA",      component: <Prompts /> },
+];
+
+export default function App() {
+  const [active, setActive] = useState("resumen");
+  const current = NAV_ITEMS.find((i) => i.id === active);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span className="brand-tag">AUDITORIA</span>
+          <h1 className="brand-title">Notaría Central Digital</h1>
+          <p className="brand-sub">Seguridad Web — DVWA Low</p>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              className={`nav-item ${active === item.id ? "nav-item--active" : ""}`}
+              onClick={() => setActive(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <span>Johnen · 2026</span>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </aside>
+      <main className="content">
+        {current.component}
+      </main>
+    </div>
+  );
 }
-
-export default App
