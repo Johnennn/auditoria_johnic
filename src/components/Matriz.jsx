@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 const riesgos = [
   { id:"R-01", riesgo:"Acceso no autorizado a documentos mediante SQLi", activos:"A-01, A-02, A-04", prob:3, impacto:4, resultado:12, nivel:"critical" },
@@ -11,24 +12,75 @@ const riesgos = [
   { id:"R-08", riesgo:"Exposición del código fuente por mala configuración", activos:"A-10", prob:2, impacto:3, resultado:6, nivel:"medium" },
 ];
 
-const probLabels = ["3 — Alta","2 — Media","1 — Baja"];
-const impLabels  = ["1 — Bajo","2 — Medio","3 — Alto","4 — Crítico"];
+const impLabels = ["1 — Bajo","2 — Medio","3 — Alto","4 — Crítico"];
 
 function getCell(prob, imp) {
   return riesgos.filter(r => r.prob === prob && r.impacto === imp);
 }
 
 function cellClass(prob, imp) {
-  const score = prob * imp;
-  if (score >= 10) return "cell-critical";
-  if (score >= 7)  return "cell-high";
-  if (score >= 4)  return "cell-medium";
-  if (score >= 1)  return "cell-low";
-  return "cell-empty";
+  const items = getCell(prob, imp);
+  if (items.length === 0) return "cell-empty";
+  const nivel = items[0].nivel;
+  if (nivel === "critical") return "cell-critical";
+  if (nivel === "high")     return "cell-high";
+  if (nivel === "medium")   return "cell-medium";
+  return "cell-low";
+}
+
+function Tooltip({ items, x, y }) {
+  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: y, left: x + 16 });
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const el = ref.current;
+    const rect = el.getBoundingClientRect();
+    let top = y - rect.height - 12;
+    let left = x + 16;
+    if (top < 8) top = y + 16;
+    if (left + rect.width > window.innerWidth - 8) left = x - rect.width - 8;
+    setPos({ top, left });
+  }, [x, y]);
+
+  return createPortal(
+    <div
+      ref={ref}
+      style={{
+        position:"fixed",
+        top: pos.top,
+        left: pos.left,
+        background:"#1a000a",
+        border:"1px solid #7a0018",
+        borderRadius:"4px",
+        padding:"10px 14px",
+        zIndex:99999,
+        minWidth:"260px",
+        maxWidth:"360px",
+        boxShadow:"0 4px 24px rgba(255,0,51,0.25)",
+        pointerEvents:"none",
+      }}
+    >
+      {items.map(r => (
+        <div key={r.id} style={{marginBottom:"6px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
+          <span style={{fontFamily:"'Share Tech Mono',monospace",color:"#ff0033",fontSize:"10px",whiteSpace:"nowrap"}}>{r.id}</span>
+          <span style={{fontSize:"11px",color:"#f0e0e4",lineHeight:"1.4"}}>{r.riesgo}</span>
+        </div>
+      ))}
+    </div>,
+    document.body
+  );
 }
 
 export default function Matriz() {
   const [hover, setHover] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handler = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", handler);
+    return () => window.removeEventListener("mousemove", handler);
+  }, []);
 
   return (
     <div>
@@ -102,32 +154,8 @@ export default function Matriz() {
                         className={items.length > 0 ? cellClass(prob, imp) : "cell-empty"}
                         onMouseEnter={() => items.length > 0 && setHover(key)}
                         onMouseLeave={() => setHover(null)}
-                        style={{position:"relative"}}
                       >
                         {items.length > 0 ? items.map(r => r.id).join(", ") : "—"}
-                        {hover === key && items.length > 0 && (
-                          <div style={{
-                            position:"absolute",
-                            bottom:"calc(100% + 6px)",
-                            left:"50%",
-                            transform:"translateX(-50%)",
-                            background:"#1a000a",
-                            border:"1px solid var(--red-dim)",
-                            borderRadius:"4px",
-                            padding:"10px 14px",
-                            zIndex:10,
-                            minWidth:"220px",
-                            boxShadow:"0 4px 20px rgba(255,0,51,0.2)",
-                            pointerEvents:"none",
-                          }}>
-                            {items.map(r => (
-                              <div key={r.id} style={{marginBottom:"6px"}}>
-                                <span style={{fontFamily:"var(--mono)",color:"var(--red)",fontSize:"10px"}}>{r.id}</span>
-                                <span style={{fontSize:"11px",color:"var(--text)",marginLeft:"8px"}}>{r.riesgo}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </td>
                     );
                   })}
@@ -136,6 +164,14 @@ export default function Matriz() {
             </tbody>
           </table>
         </div>
+
+        {hover && (() => {
+          const [prob, imp] = hover.split("-").map(Number);
+          const items = getCell(prob, imp);
+          return items.length > 0
+            ? <Tooltip items={items} x={mousePos.x} y={mousePos.y} />
+            : null;
+        })()}
       </div>
 
       <div className="card">
@@ -145,7 +181,7 @@ export default function Matriz() {
             <tr><th>#</th><th>Riesgo</th><th>Activos</th><th>Prob</th><th>Impacto</th><th>Score</th><th>Nivel</th></tr>
           </thead>
           <tbody>
-            {riesgos.sort((a,b) => b.resultado - a.resultado).map(r => (
+            {[...riesgos].sort((a,b) => b.resultado - a.resultado).map(r => (
               <tr key={r.id}>
                 <td style={{fontFamily:"var(--mono)",color:"var(--red)",fontSize:"11px"}}>{r.id}</td>
                 <td style={{fontSize:"12px"}}>{r.riesgo}</td>
