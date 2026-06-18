@@ -8,7 +8,7 @@ Proyecto de auditoría de seguridad web desarrollado sobre el entorno simulado D
 
 ## Estructura del Proyecto
 
-    proyecto/
+    auditoria_johnic/
     ├── docs_johnic/
     │   ├── 01_resumen_johnic.md
     │   ├── 02_sqli_johnic.md
@@ -24,35 +24,63 @@ Proyecto de auditoría de seguridad web desarrollado sobre el entorno simulado D
     │   ├── xss_johnic.png
     │   └── comandos_johnic.png
     ├── src/
-    ├── public/
-    ├── README.md
-    └── package.json
+    │   ├── components/
+    │   │   ├── Resumen.jsx
+    │   │   ├── SQLi.jsx
+    │   │   ├── XSS.jsx
+    │   │   ├── Comandos.jsx
+    │   │   ├── Activos.jsx
+    │   │   ├── Matriz.jsx
+    │   │   ├── Controles.jsx
+    │   │   ├── Recuperacion.jsx
+    │   │   └── Prompts.jsx
+    │   ├── img_johnic/
+    │   │   ├── sqli_johnic.png
+    │   │   ├── xss_johnic.png
+    │   │   └── comandos_johnic.png
+    │   ├── App.jsx
+    │   ├── App.css
+    │   ├── index.css
+    │   └── main.jsx
+    ├── index.html
+    ├── vite.config.js
+    ├── package.json
+    └── README.md
+
+---
+
+## Instalación y Uso
+
+    npm install
+    npm run dev
+
+La aplicación queda disponible en http://localhost:5173
 
 ---
 
 ## Vulnerabilidades Analizadas
 
-| N° | Vulnerabilidad    | Payload utilizado                  | CVSS v3.1    |
-|----|-------------------|------------------------------------|--------------|
-| 1  | SQL Injection     | ' OR '1'='1                        | 9.8 Crítico  |
-| 2  | XSS Reflected     | script alert Johnen /script        | 6.1 Medio    |
-| 3  | Command Injection | 127.0.0.1; cat /etc/passwd         | 10.0 Crítico |
+| N° | Vulnerabilidad    | Payload utilizado              | CVSS v3.1    |
+|----|-------------------|--------------------------------|--------------|
+| 1  | SQL Injection     | ' OR '1'='1                    | 9.8 Crítico  |
+| 2  | XSS Reflected     | script alert Johnen /script    | 6.1 Medio    |
+| 3  | Command Injection | 127.0.0.1; cat /etc/passwd     | 10.0 Crítico |
 
 ---
 
 ## Documentación
 
-| Archivo                    | Contenido                                                        |
-|----------------------------|------------------------------------------------------------------|
-| 01_resumen_johnic.md       | Empresa auditada, portal de clientes, objetivo y alcance         |
-| 02_sqli_johnic.md          | Evidencia, análisis técnico, CVSS y defensa de SQL Injection     |
-| 03_xss_johnic.md           | Evidencia, análisis técnico, CVSS y defensa de XSS Reflected     |
-| 04_comandos_johnic.md      | Evidencia, análisis técnico, CVSS y defensa de Command Injection |
-| 05_activos_johnic.md       | Activos de información y riesgos según la industria              |
-| 06_matriz_johnic.md        | Matriz de riesgo (probabilidad x impacto) y mapa de calor        |
-| 07_controles_johnic.md     | Políticas de prevención y controles de mitigación                |
-| 08_recuperacion_johnic.md  | Mejora tecnológica y plan de recuperación (DR)                   |
-| 09_prompts_johnic.md       | Bitácora de uso de IA                                            |
+| Archivo                   | Contenido                                                        |
+|---------------------------|------------------------------------------------------------------|
+| 01_resumen_johnic.md      | Empresa auditada, portal de clientes, objetivo y alcance         |
+| 02_sqli_johnic.md         | Evidencia, análisis técnico, CVSS y defensa de SQL Injection     |
+| 03_xss_johnic.md          | Evidencia, análisis técnico, CVSS y defensa de XSS Reflected     |
+| 04_comandos_johnic.md     | Evidencia, análisis técnico, CVSS y defensa de Command Injection |
+| 05_activos_johnic.md      | Activos de información y riesgos según la industria              |
+| 06_matriz_johnic.md       | Matriz de riesgo (probabilidad x impacto) y mapa de calor        |
+| 07_controles_johnic.md    | Políticas de prevención y controles de mitigación                |
+| 08_recuperacion_johnic.md | Mejora tecnológica y plan de recuperación (DR)                   |
+| 09_prompts_johnic.md      | Bitácora de uso de IA                                            |
 
 ---
 
@@ -67,5 +95,5 @@ Proyecto de auditoría de seguridad web desarrollado sobre el entorno simulado D
 
 ## Autor
 
-Nicolás Johnen
+Johnen
 Auditoría de Seguridad Web — 2026
