@@ -11,23 +11,24 @@ import Prompts from "./components/Prompts";
 import "./App.css";
 
 const NAV_ITEMS = [
-  { id: "resumen",     label: "01 Resumen",        component: <Resumen /> },
-  { id: "sqli",        label: "02 SQL Injection",   component: <SQLi /> },
-  { id: "xss",         label: "03 XSS Reflected",   component: <XSS /> },
-  { id: "comandos",    label: "04 Cmd Injection",   component: <Comandos /> },
-  { id: "activos",     label: "05 Activos",         component: <Activos /> },
-  { id: "matriz",      label: "06 Matriz de Riesgo",component: <Matriz /> },
-  { id: "controles",   label: "07 Controles",       component: <Controles /> },
-  { id: "recuperacion",label: "08 Recuperación",    component: <Recuperacion /> },
-  { id: "prompts",     label: "09 Prompts IA",      component: <Prompts /> },
+  { id: "resumen",      label: "01 Resumen",         component: <Resumen /> },
+  { id: "sqli",         label: "02 SQL Injection",    component: <SQLi /> },
+  { id: "xss",          label: "03 XSS Reflected",    component: <XSS /> },
+  { id: "comandos",     label: "04 Cmd Injection",    component: <Comandos /> },
+  { id: "activos",      label: "05 Activos",          component: <Activos /> },
+  { id: "matriz",       label: "06 Matriz de Riesgo", component: <Matriz /> },
+  { id: "controles",    label: "07 Controles",        component: <Controles /> },
+  { id: "recuperacion", label: "08 Recuperación",     component: <Recuperacion /> },
+  { id: "prompts",      label: "09 Prompts IA",       component: <Prompts /> },
 ];
 
 export default function App() {
   const [active, setActive] = useState("resumen");
+  const [light, setLight] = useState(false);
   const current = NAV_ITEMS.find((i) => i.id === active);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${light ? " light" : ""}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
           <span className="brand-tag">AUDITORIA</span>
@@ -46,6 +47,10 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
+          <button className="theme-toggle" onClick={() => setLight(!light)}>
+            <span className="theme-toggle-icon">{light ? "🌙" : "☀️"}</span>
+            <span className="theme-toggle-label">{light ? "MODO OSCURO" : "MODO CLARO"}</span>
+          </button>
           <span>Johnen · 2026</span>
         </div>
       </aside>
