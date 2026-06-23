@@ -12,63 +12,73 @@ const riesgos = [
 ];
 
 const nivelConfig = {
-  critical: { label:"CRÍTICO", color:"#ff0033", bg:"rgba(255,0,51,0.12)", border:"#ff0033" },
-  high:     { label:"ALTO",    color:"#ff8c00", bg:"rgba(255,140,0,0.10)", border:"#ff8c00" },
-  medium:   { label:"MEDIO",   color:"#ffd700", bg:"rgba(255,215,0,0.08)", border:"#ffd700" },
-  low:      { label:"BAJO",    color:"#00cc44", bg:"rgba(0,204,68,0.08)",  border:"#00cc44" },
+  critical: { label:"CRÍTICO", color:"#ff0033", bg:"rgba(255,0,51,0.18)", border:"rgba(255,0,51,0.6)" },
+  high:     { label:"ALTO",    color:"#ff8c00", bg:"rgba(255,140,0,0.15)", border:"rgba(255,140,0,0.5)" },
+  medium:   { label:"MEDIO",   color:"#ffd700", bg:"rgba(255,215,0,0.12)", border:"rgba(255,215,0,0.4)" },
+  low:      { label:"BAJO",    color:"#00cc44", bg:"rgba(0,204,68,0.10)",  border:"rgba(0,204,68,0.4)" },
 };
 
-const grupos = [
-  { nivel:"critical", riesgos: riesgos.filter(r => r.nivel === "critical") },
-  { nivel:"high",     riesgos: riesgos.filter(r => r.nivel === "high") },
-  { nivel:"medium",   riesgos: riesgos.filter(r => r.nivel === "medium") },
-];
+const probLabels = {3:"ALTA",2:"MEDIA",1:"BAJA"};
+const impLabels  = {1:"BAJO",2:"MEDIO",3:"ALTO",4:"CRÍTICO"};
 
-function ScoreBar({ value, max = 12, color }) {
-  return (
-    <div style={{width:"100%",height:"4px",background:"rgba(255,255,255,0.07)",borderRadius:"2px",overflow:"hidden",marginTop:"8px"}}>
-      <div style={{width:`${(value/max)*100}%`,height:"100%",background:color,borderRadius:"2px",boxShadow:`0 0 6px ${color}`,transition:"width 0.6s ease"}} />
-    </div>
-  );
+function getCell(prob, imp) {
+  return riesgos.filter(r => r.prob === prob && r.impacto === imp);
 }
 
-function RiskCard({ r, selected, onClick }) {
-  const cfg = nivelConfig[r.nivel];
+function getCellNivel(prob, imp) {
+  const score = prob * imp;
+  if (score >= 10) return "critical";
+  if (score >= 7)  return "high";
+  if (score >= 4)  return "medium";
+  if (score >= 1)  return "low";
+  return null;
+}
+
+function Modal({ items, onClose }) {
+  const cfg = nivelConfig[items[0].nivel];
   return (
-    <div onClick={onClick} style={{background:selected?cfg.bg:"var(--surface)",border:`1px solid ${selected?cfg.border:"var(--border)"}`,borderRadius:"6px",padding:"14px 16px",cursor:"pointer",transition:"all 0.2s",boxShadow:selected?`0 0 16px ${cfg.color}33`:"none"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
-        <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:cfg.color,letterSpacing:"1px"}}>{r.id}</span>
-        <span style={{fontFamily:"var(--mono)",fontSize:"18px",fontWeight:"700",color:cfg.color,lineHeight:1,opacity:selected?1:0.5}}>{r.resultado}</span>
-      </div>
-      <p style={{fontSize:"12px",lineHeight:"1.4",marginTop:"6px",color:"var(--text)"}}>{r.riesgo}</p>
-      <ScoreBar value={r.resultado} color={cfg.color} />
-      {selected && (
-        <div style={{marginTop:"10px",paddingTop:"10px",borderTop:"1px solid var(--border)"}}>
-          <div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}>
-            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>PROB <strong style={{color:cfg.color}}>{r.prob}</strong></span>
-            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>IMPACTO <strong style={{color:cfg.color}}>{r.impacto}</strong></span>
-            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>ACTIVOS <strong style={{color:"var(--text)"}}>{r.activos}</strong></span>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div onClick={e => e.stopPropagation()} style={{background:"var(--surface)",border:`1px solid ${cfg.color}`,borderRadius:"8px",padding:"28px 32px",minWidth:"380px",maxWidth:"520px",width:"90%",boxShadow:`0 0 48px ${cfg.color}33`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <div style={{width:"8px",height:"8px",borderRadius:"50%",background:cfg.color,boxShadow:`0 0 8px ${cfg.color}`}}/>
+            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:cfg.color,letterSpacing:"3px"}}>{cfg.label} — SCORE {items[0].prob * items[0].impacto}</span>
           </div>
+          <button onClick={onClose} style={{background:"none",border:"1px solid var(--border)",color:"var(--text-dim)",fontFamily:"var(--mono)",fontSize:"11px",cursor:"pointer",padding:"4px 10px",borderRadius:"3px"}}>ESC</button>
         </div>
-      )}
+        {items.map(r => (
+          <div key={r.id} style={{borderLeft:`3px solid ${cfg.color}`,paddingLeft:"16px",marginBottom:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"6px"}}>
+              <span style={{fontFamily:"var(--mono)",color:cfg.color,fontSize:"11px"}}>{r.id}</span>
+              <span style={{fontFamily:"var(--mono)",fontSize:"18px",fontWeight:"700",color:cfg.color}}>{r.resultado}</span>
+            </div>
+            <p style={{fontSize:"13px",color:"var(--text)",marginBottom:"6px",lineHeight:"1.5"}}>{r.riesgo}</p>
+            <p style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>Activos: {r.activos}</p>
+            <div style={{display:"flex",gap:"16px",marginTop:"8px"}}>
+              <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>PROB <strong style={{color:cfg.color}}>{r.prob}</strong></span>
+              <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>IMPACTO <strong style={{color:cfg.color}}>{r.impacto}</strong></span>
+              <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>SCORE <strong style={{color:cfg.color}}>{r.resultado}</strong></span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 export default function Matriz() {
-  const [selected, setSelected] = useState(null);
-  const toggle = (id) => setSelected(selected === id ? null : id);
+  const [modal, setModal] = useState(null);
 
   return (
     <div>
       <div className="section-header">
         <span className="section-eyebrow">06 — MATRIZ</span>
         <h2 className="section-title">Matriz de Riesgo</h2>
-        <p className="section-desc">Haz clic en cualquier riesgo para ver su detalle. Ordenados por nivel de criticidad.</p>
+        <p className="section-desc">Probabilidad × Impacto. Haz clic en una celda con riesgos para ver el detalle.</p>
       </div>
 
       {/* LEYENDA */}
-      <div style={{display:"flex",gap:"24px",marginBottom:"28px",flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:"20px",marginBottom:"24px",flexWrap:"wrap"}}>
         {Object.entries(nivelConfig).map(([key,cfg]) => (
           <div key={key} style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"10px",height:"10px",borderRadius:"50%",background:cfg.color,boxShadow:`0 0 6px ${cfg.color}`}}/>
@@ -77,29 +87,83 @@ export default function Matriz() {
         ))}
       </div>
 
-      {/* COLUMNAS POR NIVEL */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",alignItems:"start"}}>
-        {grupos.map(g => {
-          const cfg = nivelConfig[g.nivel];
-          return (
-            <div key={g.nivel}>
-              <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px",paddingBottom:"10px",borderBottom:`1px solid ${cfg.color}44`}}>
-                <div style={{width:"8px",height:"8px",borderRadius:"50%",background:cfg.color,boxShadow:`0 0 8px ${cfg.color}`,flexShrink:0}}/>
-                <span style={{fontFamily:"var(--mono)",fontSize:"11px",color:cfg.color,letterSpacing:"2px"}}>{cfg.label}</span>
-                <span style={{marginLeft:"auto",fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>{g.riesgos.length} riesgo{g.riesgos.length>1?"s":""}</span>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-                {g.riesgos.map(r => (
-                  <RiskCard key={r.id} r={r} selected={selected===r.id} onClick={() => toggle(r.id)} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      {/* MATRIZ */}
+      <div className="card" style={{padding:"0",overflow:"hidden"}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead>
+            <tr>
+              <th style={{background:"var(--surface2)",padding:"14px 16px",fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)",letterSpacing:"1px",textAlign:"center",borderBottom:"1px solid var(--border)",borderRight:"1px solid var(--border)",width:"120px"}}>
+                PROB \ IMPACTO
+              </th>
+              {[1,2,3,4].map(imp => (
+                <th key={imp} style={{background:"var(--surface2)",padding:"14px",fontFamily:"var(--mono)",fontSize:"10px",color:"var(--red-soft)",letterSpacing:"1.5px",textAlign:"center",borderBottom:"1px solid var(--border)",borderRight:"1px solid var(--border)"}}>
+                  <div style={{fontSize:"18px",fontWeight:"700",color:"var(--red)",marginBottom:"2px"}}>{imp}</div>
+                  {impLabels[imp]}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[3,2,1].map(prob => (
+              <tr key={prob}>
+                <td style={{background:"var(--surface2)",padding:"14px 16px",fontFamily:"var(--mono)",fontSize:"10px",color:"var(--red-soft)",letterSpacing:"1px",textAlign:"right",borderBottom:"1px solid var(--border)",borderRight:"1px solid var(--border)"}}>
+                  <div style={{fontSize:"18px",fontWeight:"700",color:"var(--red)",marginBottom:"2px"}}>{prob}</div>
+                  {probLabels[prob]}
+                </td>
+                {[1,2,3,4].map(imp => {
+                  const items = getCell(prob, imp);
+                  const nivel = getCellNivel(prob, imp);
+                  const cfg = nivel ? nivelConfig[nivel] : null;
+                  const score = prob * imp;
+                  const hasRiesgos = items.length > 0;
+                  return (
+                    <td
+                      key={imp}
+                      onClick={() => hasRiesgos && setModal(items)}
+                      style={{
+                        padding:"0",
+                        borderBottom:"1px solid var(--border)",
+                        borderRight:"1px solid var(--border)",
+                        cursor: hasRiesgos ? "pointer" : "default",
+                        transition:"all 0.2s",
+                        background: cfg ? cfg.bg : "var(--surface)",
+                        position:"relative",
+                        minHeight:"90px",
+                      }}
+                    >
+                      <div style={{
+                        position:"absolute",inset:0,
+                        border: cfg ? `1px solid ${cfg.border}` : "none",
+                        borderRadius:"0",
+                        transition:"all 0.2s",
+                        pointerEvents:"none",
+                      }}/>
+                      <div style={{padding:"16px",height:"90px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                        <div style={{fontFamily:"var(--mono)",fontSize:"11px",fontWeight:"700",color: cfg ? cfg.color : "var(--border)",opacity: hasRiesgos ? 1 : 0.3}}>
+                          {score}
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+                          {hasRiesgos ? items.map(r => (
+                            <div key={r.id} style={{fontFamily:"var(--mono)",fontSize:"10px",color:cfg.color,letterSpacing:"0.5px",display:"flex",alignItems:"center",gap:"4px"}}>
+                              <div style={{width:"5px",height:"5px",borderRadius:"50%",background:cfg.color,boxShadow:`0 0 4px ${cfg.color}`,flexShrink:0}}/>
+                              {r.id}
+                            </div>
+                          )) : (
+                            <span style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--border)"}}>—</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* RESUMEN DE SCORES */}
-      <div className="card" style={{marginTop:"28px"}}>
+      {/* RESUMEN */}
+      <div className="card" style={{marginTop:"20px"}}>
         <p className="card-title">Resumen de Scores</p>
         <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
           {[...riesgos].sort((a,b) => b.resultado - a.resultado).map(r => {
@@ -121,33 +185,25 @@ export default function Matriz() {
         </div>
       </div>
 
-      {/* EXPLICACION DEL CALCULO */}
+      {/* EXPLICACION */}
       <div className="card" style={{marginTop:"16px"}}>
         <p className="card-title">¿Cómo se calcula el nivel de riesgo?</p>
         <p style={{fontSize:"13px",color:"var(--text)",marginBottom:"20px",lineHeight:"1.7"}}>
           Cada riesgo se evalúa multiplicando su <strong>probabilidad</strong> de ocurrencia por su <strong>impacto</strong> potencial sobre los activos. El resultado determina el nivel de criticidad.
         </p>
-
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"16px",marginBottom:"24px",flexWrap:"wrap"}}>
-          {[
-            {label:"PROBABILIDAD",val:"1–3",border:"var(--border)"},
-            {sep:"×"},
-            {label:"IMPACTO",val:"1–4",border:"var(--border)"},
-            {sep:"="},
-            {label:"SCORE",val:"1–12",border:"var(--red-dim)"},
-          ].map((item,i) =>
+          {[{label:"PROBABILIDAD",val:"1–3"},{sep:"×"},{label:"IMPACTO",val:"1–4"},{sep:"="},{label:"SCORE",val:"1–12"}].map((item,i) =>
             item.sep ? (
               <span key={i} style={{fontFamily:"var(--mono)",fontSize:"28px",color:"var(--text-dim)"}}>{item.sep}</span>
             ) : (
-              <div key={i} style={{background:"var(--surface2)",border:`1px solid ${item.border}`,borderRadius:"6px",padding:"16px 24px",textAlign:"center",minWidth:"120px"}}>
+              <div key={i} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"6px",padding:"16px 24px",textAlign:"center",minWidth:"120px"}}>
                 <p style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)",letterSpacing:"2px",marginBottom:"6px"}}>{item.label}</p>
                 <p style={{fontFamily:"var(--mono)",fontSize:"28px",fontWeight:"700",color:"var(--red)"}}>{item.val}</p>
               </div>
             )
           )}
         </div>
-
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px",marginBottom:"20px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"10px"}}>
           {[
             {rango:"10–12",label:"CRÍTICO",color:"#ff0033",bg:"rgba(255,0,51,0.10)"},
             {rango:"7–9",  label:"ALTO",   color:"#ff8c00",bg:"rgba(255,140,0,0.10)"},
@@ -160,47 +216,9 @@ export default function Matriz() {
             </div>
           ))}
         </div>
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
-          <div>
-            <p style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--red)",letterSpacing:"2px",marginBottom:"10px"}}>ESCALA DE PROBABILIDAD</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {[
-                {val:"3",label:"Alta",  desc:"El evento es muy probable que ocurra"},
-                {val:"2",label:"Media", desc:"El evento podría ocurrir en algún momento"},
-                {val:"1",label:"Baja",  desc:"El evento tiene pocas posibilidades de ocurrir"},
-              ].map(p => (
-                <div key={p.val} style={{display:"flex",gap:"12px",alignItems:"flex-start",padding:"8px",background:"var(--surface2)",borderRadius:"4px"}}>
-                  <span style={{fontFamily:"var(--mono)",fontSize:"16px",fontWeight:"700",color:"var(--red)",width:"20px",flexShrink:0}}>{p.val}</span>
-                  <div>
-                    <p style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--text)",marginBottom:"2px"}}>{p.label}</p>
-                    <p style={{fontSize:"11px",color:"var(--text-dim)"}}>{p.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--red)",letterSpacing:"2px",marginBottom:"10px"}}>ESCALA DE IMPACTO</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {[
-                {val:"4",label:"Crítico",desc:"Daño irreversible o total sobre el negocio"},
-                {val:"3",label:"Alto",   desc:"Consecuencias graves sobre la operación"},
-                {val:"2",label:"Medio",  desc:"Afecta parcialmente la operación"},
-                {val:"1",label:"Bajo",   desc:"Consecuencias menores, sin afectar operación"},
-              ].map(i => (
-                <div key={i.val} style={{display:"flex",gap:"12px",alignItems:"flex-start",padding:"8px",background:"var(--surface2)",borderRadius:"4px"}}>
-                  <span style={{fontFamily:"var(--mono)",fontSize:"16px",fontWeight:"700",color:"var(--red)",width:"20px",flexShrink:0}}>{i.val}</span>
-                  <div>
-                    <p style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--text)",marginBottom:"2px"}}>{i.label}</p>
-                    <p style={{fontSize:"11px",color:"var(--text-dim)"}}>{i.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
+
+      {modal && <Modal items={modal} onClose={() => setModal(null)} />}
     </div>
   );
 }
