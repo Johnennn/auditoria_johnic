@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 
 const riesgos = [
   { id:"R-01", riesgo:"Acceso no autorizado a documentos mediante SQLi", activos:"A-01, A-02, A-04", prob:3, impacto:4, resultado:12, nivel:"critical" },
@@ -12,188 +11,212 @@ const riesgos = [
   { id:"R-08", riesgo:"Exposición del código fuente por mala configuración", activos:"A-10", prob:2, impacto:3, resultado:6, nivel:"medium" },
 ];
 
-const impLabels = ["1 — Bajo","2 — Medio","3 — Alto","4 — Crítico"];
+const nivelConfig = {
+  critical: { label:"CRÍTICO", color:"#ff0033", bg:"rgba(255,0,51,0.12)", border:"#ff0033", bar:"#ff0033" },
+  high:     { label:"ALTO",    color:"#ff8c00", bg:"rgba(255,140,0,0.10)", border:"#ff8c00", bar:"#ff8c00" },
+  medium:   { label:"MEDIO",   color:"#ffd700", bg:"rgba(255,215,0,0.08)", border:"#ffd700", bar:"#ffd700" },
+  low:      { label:"BAJO",    color:"#00cc44", bg:"rgba(0,204,68,0.08)",  border:"#00cc44", bar:"#00cc44" },
+};
 
-function getCell(prob, imp) {
-  return riesgos.filter(r => r.prob === prob && r.impacto === imp);
+const grupos = [
+  { nivel:"critical", riesgos: riesgos.filter(r => r.nivel === "critical") },
+  { nivel:"high",     riesgos: riesgos.filter(r => r.nivel === "high") },
+  { nivel:"medium",   riesgos: riesgos.filter(r => r.nivel === "medium") },
+];
+
+function ScoreBar({ value, max = 12, color }) {
+  return (
+    <div style={{
+      width:"100%", height:"4px",
+      background:"rgba(255,255,255,0.07)",
+      borderRadius:"2px", overflow:"hidden",
+      marginTop:"8px",
+    }}>
+      <div style={{
+        width:`${(value/max)*100}%`,
+        height:"100%",
+        background: color,
+        borderRadius:"2px",
+        boxShadow:`0 0 6px ${color}`,
+        transition:"width 0.6s ease",
+      }} />
+    </div>
+  );
 }
 
-function cellClass(prob, imp) {
-  const items = getCell(prob, imp);
-  if (items.length === 0) return "cell-empty";
-  const nivel = items[0].nivel;
-  if (nivel === "critical") return "cell-critical";
-  if (nivel === "high")     return "cell-high";
-  if (nivel === "medium")   return "cell-medium";
-  return "cell-low";
-}
-
-function Tooltip({ items, x, y }) {
-  const ref = useRef(null);
-  const [pos, setPos] = useState({ top: y, left: x + 16 });
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const el = ref.current;
-    const rect = el.getBoundingClientRect();
-    let top = y - rect.height - 12;
-    let left = x + 16;
-    if (top < 8) top = y + 16;
-    if (left + rect.width > window.innerWidth - 8) left = x - rect.width - 8;
-    setPos({ top, left });
-  }, [x, y]);
-
-  return createPortal(
+function RiskCard({ r, selected, onClick }) {
+  const cfg = nivelConfig[r.nivel];
+  return (
     <div
-      ref={ref}
+      onClick={onClick}
       style={{
-        position:"fixed",
-        top: pos.top,
-        left: pos.left,
-        background:"#1a000a",
-        border:"1px solid #7a0018",
-        borderRadius:"4px",
-        padding:"10px 14px",
-        zIndex:99999,
-        minWidth:"260px",
-        maxWidth:"360px",
-        boxShadow:"0 4px 24px rgba(255,0,51,0.25)",
-        pointerEvents:"none",
+        background: selected ? cfg.bg : "var(--surface)",
+        border:`1px solid ${selected ? cfg.border : "var(--border)"}`,
+        borderRadius:"6px",
+        padding:"14px 16px",
+        cursor:"pointer",
+        transition:"all 0.2s",
+        boxShadow: selected ? `0 0 16px ${cfg.color}33` : "none",
       }}
     >
-      {items.map(r => (
-        <div key={r.id} style={{marginBottom:"6px",display:"flex",gap:"8px",alignItems:"flex-start"}}>
-          <span style={{fontFamily:"'Share Tech Mono',monospace",color:"#ff0033",fontSize:"10px",whiteSpace:"nowrap"}}>{r.id}</span>
-          <span style={{fontSize:"11px",color:"#f0e0e4",lineHeight:"1.4"}}>{r.riesgo}</span>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}}>
+        <span style={{
+          fontFamily:"var(--mono)", fontSize:"10px",
+          color: cfg.color, letterSpacing:"1px",
+        }}>{r.id}</span>
+        <span style={{
+          fontFamily:"var(--mono)", fontSize:"18px",
+          fontWeight:"700", color: cfg.color,
+          lineHeight:1, opacity: selected ? 1 : 0.5,
+        }}>{r.resultado}</span>
+      </div>
+      <p style={{
+        fontSize:"12px", lineHeight:"1.4",
+        marginTop:"6px", color:"var(--text)",
+      }}>{r.riesgo}</p>
+      <ScoreBar value={r.resultado} color={cfg.color} />
+      {selected && (
+        <div style={{marginTop:"10px", paddingTop:"10px", borderTop:"1px solid var(--border)"}}>
+          <div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}>
+            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>
+              PROB <strong style={{color:cfg.color}}>{r.prob}</strong>
+            </span>
+            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>
+              IMPACTO <strong style={{color:cfg.color}}>{r.impacto}</strong>
+            </span>
+            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>
+              ACTIVOS <strong style={{color:"var(--text)"}}>{r.activos}</strong>
+            </span>
+          </div>
         </div>
-      ))}
-    </div>,
-    document.body
+      )}
+    </div>
   );
 }
 
 export default function Matriz() {
-  const [hover, setHover] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    const handler = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
-  }, []);
+  const toggle = (id) => setSelected(selected === id ? null : id);
 
   return (
     <div>
       <div className="section-header">
         <span className="section-eyebrow">06 — MATRIZ</span>
         <h2 className="section-title">Matriz de Riesgo</h2>
-        <p className="section-desc">Probabilidad × Impacto. Pasa el cursor sobre una celda para ver los riesgos asociados.</p>
+        <p className="section-desc">Haz clic en cualquier riesgo para ver su detalle. Ordenados por nivel de criticidad.</p>
       </div>
 
-      <div className="card">
-        <p className="card-title">Escala de Valoración</p>
-        <div className="grid-2">
-          <div>
-            <p style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--red)",marginBottom:"8px"}}>PROBABILIDAD</p>
-            <table className="audit-table">
-              <tbody>
-                <tr><td style={{fontFamily:"var(--mono)"}}>3 — Alta</td><td>El evento es muy probable que ocurra</td></tr>
-                <tr><td style={{fontFamily:"var(--mono)"}}>2 — Media</td><td>El evento podría ocurrir en algún momento</td></tr>
-                <tr><td style={{fontFamily:"var(--mono)"}}>1 — Baja</td><td>El evento tiene pocas posibilidades de ocurrir</td></tr>
-              </tbody>
-            </table>
+      {/* LEYENDA */}
+      <div style={{display:"flex",gap:"24px",marginBottom:"28px",flexWrap:"wrap"}}>
+        {Object.entries(nivelConfig).map(([key,cfg]) => (
+          <div key={key} style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{
+              width:"10px",height:"10px",borderRadius:"50%",
+              background:cfg.color,
+              boxShadow:`0 0 6px ${cfg.color}`,
+            }}/>
+            <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)",letterSpacing:"1px"}}>
+              {cfg.label}
+            </span>
           </div>
-          <div>
-            <p style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--red)",marginBottom:"8px"}}>IMPACTO</p>
-            <table className="audit-table">
-              <tbody>
-                <tr><td style={{fontFamily:"var(--mono)"}}>4 — Crítico</td><td>Daño irreversible o total sobre el negocio</td></tr>
-                <tr><td style={{fontFamily:"var(--mono)"}}>3 — Alto</td><td>Consecuencias graves sobre la operación</td></tr>
-                <tr><td style={{fontFamily:"var(--mono)"}}>2 — Medio</td><td>Afecta parcialmente la operación</td></tr>
-                <tr><td style={{fontFamily:"var(--mono)"}}>1 — Bajo</td><td>Consecuencias menores, sin afectar operación</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="card">
-        <p className="card-title">Mapa de Calor</p>
-        <div style={{display:"flex",gap:"12px",marginBottom:"16px",flexWrap:"wrap"}}>
-          {[
-            {cls:"cell-critical",label:"Crítico (10–12)"},
-            {cls:"cell-high",label:"Alto (7–9)"},
-            {cls:"cell-medium",label:"Medio (4–6)"},
-            {cls:"cell-low",label:"Bajo (1–3)"},
-          ].map(l => (
-            <div key={l.cls} style={{display:"flex",alignItems:"center",gap:"8px"}}>
-              <div className={l.cls} style={{width:16,height:16,borderRadius:2,border:"1px solid"}} />
-              <span style={{fontFamily:"var(--mono)",fontSize:"10px",color:"var(--text-dim)"}}>{l.label}</span>
+      {/* COLUMNAS POR NIVEL */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"16px",alignItems:"start"}}>
+        {grupos.map(g => {
+          const cfg = nivelConfig[g.nivel];
+          return (
+            <div key={g.nivel}>
+              {/* HEADER DE COLUMNA */}
+              <div style={{
+                display:"flex",alignItems:"center",gap:"10px",
+                marginBottom:"12px",
+                paddingBottom:"10px",
+                borderBottom:`1px solid ${cfg.color}44`,
+              }}>
+                <div style={{
+                  width:"8px",height:"8px",borderRadius:"50%",
+                  background:cfg.color,
+                  boxShadow:`0 0 8px ${cfg.color}`,
+                  flexShrink:0,
+                }}/>
+                <span style={{
+                  fontFamily:"var(--mono)",fontSize:"11px",
+                  color:cfg.color,letterSpacing:"2px",
+                }}>{cfg.label}</span>
+                <span style={{
+                  marginLeft:"auto",
+                  fontFamily:"var(--mono)",fontSize:"10px",
+                  color:"var(--text-dim)",
+                }}>{g.riesgos.length} riesgo{g.riesgos.length>1?"s":""}</span>
+              </div>
+
+              {/* CARDS */}
+              <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                {g.riesgos.map(r => (
+                  <RiskCard
+                    key={r.id}
+                    r={r}
+                    selected={selected === r.id}
+                    onClick={() => toggle(r.id)}
+                  />
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-
-        <div className="heatmap-wrap">
-          <table className="heatmap">
-            <thead>
-              <tr>
-                <th style={{textAlign:"right"}}>Prob \ Impacto</th>
-                {impLabels.map(l => <th key={l}>{l}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {[3,2,1].map(prob => (
-                <tr key={prob}>
-                  <td className="row-label">{prob === 3 ? "3 — Alta" : prob === 2 ? "2 — Media" : "1 — Baja"}</td>
-                  {[1,2,3,4].map(imp => {
-                    const items = getCell(prob, imp);
-                    const key = `${prob}-${imp}`;
-                    return (
-                      <td
-                        key={imp}
-                        className={items.length > 0 ? cellClass(prob, imp) : "cell-empty"}
-                        onMouseEnter={() => items.length > 0 && setHover(key)}
-                        onMouseLeave={() => setHover(null)}
-                      >
-                        {items.length > 0 ? items.map(r => r.id).join(", ") : "—"}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {hover && (() => {
-          const [prob, imp] = hover.split("-").map(Number);
-          const items = getCell(prob, imp);
-          return items.length > 0
-            ? <Tooltip items={items} x={mousePos.x} y={mousePos.y} />
-            : null;
-        })()}
+          );
+        })}
       </div>
 
-      <div className="card">
-        <p className="card-title">Tabla de Riesgos</p>
-        <table className="audit-table">
-          <thead>
-            <tr><th>#</th><th>Riesgo</th><th>Activos</th><th>Prob</th><th>Impacto</th><th>Score</th><th>Nivel</th></tr>
-          </thead>
-          <tbody>
-            {[...riesgos].sort((a,b) => b.resultado - a.resultado).map(r => (
-              <tr key={r.id}>
-                <td style={{fontFamily:"var(--mono)",color:"var(--red)",fontSize:"11px"}}>{r.id}</td>
-                <td style={{fontSize:"12px"}}>{r.riesgo}</td>
-                <td style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--text-dim)"}}>{r.activos}</td>
-                <td style={{textAlign:"center"}}>{r.prob}</td>
-                <td style={{textAlign:"center"}}>{r.impacto}</td>
-                <td style={{textAlign:"center",fontWeight:700,color: r.nivel==="critical"?"var(--red)": r.nivel==="high"?"#ff8c00":"#ffd700"}}>{r.resultado}</td>
-                <td><span className={`badge badge--${r.nivel}`}>{r.nivel==="critical"?"CRÍTICO":r.nivel==="high"?"ALTO":"MEDIO"}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* TABLA RESUMEN */}
+      <div className="card" style={{marginTop:"28px"}}>
+        <p className="card-title">Resumen de Scores</p>
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {[...riesgos].sort((a,b) => b.resultado - a.resultado).map(r => {
+            const cfg = nivelConfig[r.nivel];
+            return (
+              <div key={r.id} style={{
+                display:"flex",alignItems:"center",gap:"12px",
+                padding:"8px 0",
+                borderBottom:"1px solid var(--border)",
+              }}>
+                <span style={{
+                  fontFamily:"var(--mono)",fontSize:"10px",
+                  color:cfg.color,width:"36px",flexShrink:0,
+                }}>{r.id}</span>
+                <span style={{flex:1,fontSize:"12px",color:"var(--text)"}}>{r.riesgo}</span>
+                <div style={{width:"120px",flexShrink:0}}>
+                  <div style={{
+                    height:"6px",background:"rgba(255,255,255,0.07)",
+                    borderRadius:"3px",overflow:"hidden",
+                  }}>
+                    <div style={{
+                      width:`${(r.resultado/12)*100}%`,
+                      height:"100%",
+                      background:cfg.color,
+                      borderRadius:"3px",
+                      boxShadow:`0 0 6px ${cfg.color}`,
+                    }}/>
+                  </div>
+                </div>
+                <span style={{
+                  fontFamily:"var(--mono)",fontSize:"13px",
+                  fontWeight:700,color:cfg.color,
+                  width:"28px",textAlign:"right",flexShrink:0,
+                }}>{r.resultado}</span>
+                <span style={{
+                  fontFamily:"var(--mono)",fontSize:"9px",
+                  color:cfg.color,
+                  background:`${cfg.color}18`,
+                  border:`1px solid ${cfg.color}44`,
+                  padding:"2px 6px",borderRadius:"2px",
+                  width:"60px",textAlign:"center",flexShrink:0,
+                }}>{cfg.label}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
