@@ -530,3 +530,35 @@ body {
 .app-shell:not(.light) .content .cell-medium     { color: #ffd700 !important; }
 .app-shell:not(.light) .content .code-block      { color: #ff4d6d !important; }
 .app-shell:not(.light) .content .audit-table th  { color: #ff4d6d !important; }
+
+/* GITHUB LINK */
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  text-decoration: none;
+  transition: all 0.15s;
+  color: var(--text-dim);
+}
+
+.github-link:hover {
+  border-color: var(--red-dim);
+  background: var(--red-glow);
+  color: var(--red-soft);
+}
+
+.github-link svg {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.github-link span {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: inherit !important;
+}
